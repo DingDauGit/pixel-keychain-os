@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111111">
+<title>PIXEL OS Control Center</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:22px 15px 40px;background:#f2f2f2;color:#111;font-family:Arial,Helvetica,sans-serif}
+main{max-width:560px;margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 22px;gap:10px}
+h1{font-size:25px;letter-spacing:2px;margin:0}
+h2{font-size:12px;letter-spacing:1.3px;margin:0 0 14px}
+.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:18px;margin-bottom:14px}
+.muted{color:#777;font-size:12px;line-height:1.5}
+.device{font-size:20px;font-weight:700;margin:5px 0}
+.pill{border:1px solid #ddd;border-radius:30px;padding:7px 10px;font-size:11px;font-weight:bold;white-space:nowrap}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#999;margin-right:5px}
+.dot.on{background:#16834b}
+button,input{font:inherit}
+button{border:0;border-radius:9px;background:#111;color:white;padding:13px 14px;font-size:12px;font-weight:bold;cursor:pointer}
+button:disabled,input:disabled{opacity:.42;cursor:not-allowed}
+.full{width:100%}
+.secondary{background:#eee;color:#111;border:1px solid #ddd}
+.actions{display:flex;gap:8px;margin-top:9px}
+.actions button{flex:1}
+#log{margin:12px 0 0;padding:10px;background:#f3f3f3;border-radius:8px;font-size:12px;color:#444;overflow-wrap:anywhere;min-height:38px}
+.big{font-size:38px;font-weight:750;margin:5px 0}
+.line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #eee;font-size:13px}
+.line:last-child{border:0}
+label{display:block;font-size:12px;color:#555;margin:12px 0 7px}
+input[type=range]{width:100%;accent-color:#111}
+input[type=text],input[type=number]{width:100%;padding:12px;border:1px solid #ccc;border-radius:9px;background:#fff;color:#111}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.mode{background:#fff;color:#111;border:1px solid #ccc}
+.mode.active{background:#111;color:#fff;border-color:#111}
+.stat{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;margin:10px 0;font-size:12px}
+.statbar{grid-column:1/-1;height:7px;border-radius:20px;background:#eee;overflow:hidden}
+.statbar i{display:block;height:100%;background:#111;width:0}
+footer{text-align:center;color:#888;font-size:11px;letter-spacing:1px;margin-top:24px}
+.smallbtn{padding:10px;font-size:11px}
+</style>
+</head>
+<body><main>
+<header><h1>PIXEL OS</h1><span class="pill"><i id="dot" class="dot"></i><span id="state">DISCONNECTED</span></span></header>
+
+<section class="card">
+ <div class="muted">BLUETOOTH DEVICE</div><div class="device">PIXEL-OS-BLE</div><div class="muted">ESP32-C3 · BLE GATT</div>
+ <button id="connect" class="full" style="margin-top:15px">CONNECT DEVICE</button>
+ <div class="actions"><button id="disconnect" class="secondary" disabled>DISCONNECT</button><button id="refresh" class="secondary" disabled>REFRESH STATUS</button></div>
+ <p id="log" role="status">Ready. Use Chrome on Android or desktop Chrome over HTTPS.</p>
+</section>
+
+<section class="card">
+ <h2>DEVICE OVERVIEW</h2><div class="muted">LOCAL DEVICE TIME</div><div class="big" id="clock">--:--</div><div class="muted" id="date">Date not set</div>
+ <div class="line"><span>Uptime</span><b id="uptime">--</b></div>
+ <div class="line"><span>Brightness</span><b id="brightnessValue">--</b></div>
+ <div class="line"><span>LED mode</span><b id="ledValue">--</b></div>
+</section>
+
+<section class="card">
+ <h2>MANUAL CLOCK</h2><p class="muted">Send the current date and time from your phone to the ESP32.</p>
+ <button id="syncClock" class="full" disabled>SYNC PHONE TIME</button>
+</section>
+
+<section class="card">
+ <h2>DISPLAY CONTROL</h2><div class="line"><label for="brightness" style="margin:0">OLED brightness</label><b id="brightnessLabel">100%</b></div>
+ <input id="brightness" type="range" min="0" max="3" value="0" disabled>
+ <button id="applyBrightness" class="full" style="margin-top:12px" disabled>APPLY BRIGHTNESS</button>
+</section>
+
+<section class="card">
+ <h2>LED CONTROL</h2><div class="grid" id="ledModes">
+ <button class="mode" data-mode="0" disabled>OFF</button><button class="mode" data-mode="1" disabled>BREATHING</button>
+ <button class="mode" data-mode="2" disabled>STATUS</button><button class="mode" data-mode="3" disabled>NOTIFICATION</button>
+ <button class="mode" data-mode="4" disabled>FLASHLIGHT</button></div>
+</section>
+
+<section class="card">
+ <h2>CYBER CAT MANAGEMENT</h2><div class="muted">Rename your pet and monitor its needs.</div>
+ <label for="petName">Pet name (1–12 characters)</label><input id="petName" type="text" maxlength="12" value="PIXEL" disabled>
+ <button id="savePetName" class="full" style="margin-top:10px" disabled>SAVE PET NAME</button>
+ <div class="line"><span>Pet name</span><b id="petNameValue">--</b></div>
+ <div class="line"><span>Mood</span><b id="petMood">--</b></div>
+ <div class="stat"><span>Hunger</span><b id="hungerValue">--</b><div class="statbar"><i id="hungerBar"></i></div></div>
+ <div class="stat"><span>Happiness</span><b id="happyValue">--</b><div class="statbar"><i id="happyBar"></i></div></div>
+ <div class="stat"><span>Energy</span><b id="energyValue">--</b><div class="statbar"><i id="energyBar"></i></div></div>
+ <div class="stat"><span>Cleanliness</span><b id="cleanValue">--</b><div class="statbar"><i id="cleanBar"></i></div></div>
+ <div class="line"><span>Pet state</span><b id="petSleep">--</b></div>
+</section>
+
+<section class="card">
+ <h2>OLED IDLE CONTROL</h2><p class="muted">After inactivity, the keychain returns to Clock Home. Display schedule follows the device clock.</p>
+ <div class="line"><span>Idle mode</span><b id="idleState">--</b></div>
+ <div class="actions"><button id="idleOn" class="mode" disabled>ENABLE</button><button id="idleOff" class="mode" disabled>DISABLE</button></div>
+ <label for="idleTimeout">Inactivity timeout (10–600 seconds)</label><input id="idleTimeout" type="number" min="10" max="600" step="1" value="30" disabled>
+ <button id="saveIdleTimeout" class="full" style="margin-top:10px" disabled>SAVE TIMEOUT</button>
+ <div class="line"><span>Display schedule</span><b>01–10 ON / 11–59 OFF</b></div>
+</section>
+
+<section class="card"><h2>ABOUT</h2>
+ <div class="line"><span>Firmware</span><b>V4.3.2 BLE Rewrite</b></div>
+ <div class="line"><span>Transport</span><b>Bluetooth LE</b></div>
+ <div class="line"><span>Dashboard</span><b>Web Bluetooth</b></div>
+</section>
+<footer>PIXEL KEYCHAIN OS · BLE CONTROL CENTER</footer>
+</main>
+
+<script>
+"use strict";
+const SERVICE="12345678-1234-1234-1234-123456789000";
+const COMMAND="12345678-1234-1234-1234-123456789001";
+const STATUS="12345678-1234-1234-1234-123456789002";
+const enc=new TextEncoder();
+const dec=new TextDecoder();
+let device=null,server=null,cmdChar=null,statusChar=null,connecting=false;
+const $=id=>document.getElementById(id);
+function log(message){$("log").textContent=message}
+function setConnected(on){
+ $("dot").classList.toggle("on",on);
+ $("state").textContent=on?"CONNECTED":"DISCONNECTED";
+ ["disconnect","refresh","syncClock","brightness","applyBrightness","petName","savePetName","idleOn","idleOff","idleTimeout","saveIdleTimeout"].forEach(id=>$(id).disabled=!on);
+ document.querySelectorAll(".mode").forEach(b=>b.disabled=!on);
+ $("connect").disabled=on||connecting;
+}
+function resetConnection(message){
+ cmdChar=null;statusChar=null;server=null;
+ setConnected(false);
+ log(message);
+}
+async function send(command){
+ if(!cmdChar||!device||!device.gatt||!device.gatt.connected)throw new Error("Device is not connected.");
+ const bytes=enc.encode(command);
+ if(bytes.length>20)throw new Error("Command is longer than 20 bytes.");
+ if(cmdChar.properties.write) await cmdChar.writeValueWithResponse(bytes);
+ else if(cmdChar.properties.writeWithoutResponse) await cmdChar.writeValueWithoutResponse(bytes);
+ else throw new Error("The command characteristic is not writable.");
+}
+function updateStatus(s){
+ if(s.startsWith("B:")){
+  const m=s.match(/^B:(\d+),L:(\d+)$/);if(!m)return;
+  const b=+m[1],l=+m[2],bn=["100%","70%","40%","15%"],ln=["OFF","BREATHING","STATUS","NOTIFICATION","FLASHLIGHT"];
+  $("brightnessValue").textContent=bn[b]??"--";$("brightness").value=b;$("brightnessLabel").textContent=bn[b]??"--";
+  $("ledValue").textContent=ln[l]??"--";
+  document.querySelectorAll(".mode").forEach(x=>x.classList.toggle("active",+x.dataset.mode===l));
+ }else if(s.startsWith("U:")){
+  const n=+s.slice(2);if(Number.isFinite(n)){const h=Math.floor(n/3600),m=Math.floor(n%3600/60),sec=n%60;$("uptime").textContent=[h,m,sec].map(x=>String(x).padStart(2,"0")).join(":")}
+ }else if(s.startsWith("T:"))$("clock").textContent=s.slice(2);
+ else if(s.startsWith("D:"))$("date").textContent=s.slice(2);
+ else if(s.startsWith("P:")){$("petNameValue").textContent=s.slice(2);$("petName").value=s.slice(2)}
+ else if(s.startsWith("PS:"))$("petSleep").textContent=s.slice(3)==="1"?"SLEEPING":"AWAKE";
+ else if(s.startsWith("H:")){
+  const m=s.match(/^H:(\d+),A:(\d+),E:(\d+),C:(\d+)$/);if(!m)return;
+  const vals=[+m[1],+m[2],+m[3],+m[4]];
+  const pairs=[["hungerValue","hungerBar"],["happyValue","happyBar"],["energyValue","energyBar"],["cleanValue","cleanBar"]];
+  pairs.forEach((p,i)=>{$(p[0]).textContent=vals[i]+"%";$(p[1]).style.width=Math.min(100,vals[i])+"%"});
+  $("petMood").textContent=vals[0]<20?"HUNGRY":vals[1]<20||vals[3]<15?"SAD":vals[2]<20?"SLEEPY":vals[1]<55?"BORED":"HAPPY";
+ }else if(s.startsWith("I:")){
+  const m=s.match(/^I:(\d+),T:(\d+)$/);if(!m)return;
+  const enabled=+m[1]===1;
+  $("idleState").textContent=enabled?"ENABLED":"DISABLED";
+  $("idleTimeout").value=m[2];
+  $("idleOn").classList.toggle("active",enabled);
+  $("idleOff").classList.toggle("active",!enabled);
+ }
+}
+function onStatus(event){
+ const value=event.target.value;
+ const message=dec.decode(value).trim();
+ if(message)updateStatus(message);
+}
+async function connect(){
+ if(connecting)return;
+ if(!window.isSecureContext){log("HTTPS is required. Open this page through GitHub Pages.");return}
+ if(!navigator.bluetooth){log("Web Bluetooth is unavailable. Use Chrome or Edge with Bluetooth enabled.");return}
+ connecting=true;$("connect").disabled=true;
+ try{
+  log("Choose the Pixel Keychain in the Bluetooth device picker...");
+  // Accept all devices to avoid name-filter/scan-response mismatches.
+  device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[SERVICE]});
+  device.addEventListener("gattserverdisconnected",()=>resetConnection("Device disconnected. Check power and reconnect."));
+  log("Connecting to GATT server...");
+  server=await device.gatt.connect();
+  log("Finding Pixel OS service...");
+  const service=await server.getPrimaryService(SERVICE);
+  log("Opening command and status characteristics...");
+  cmdChar=await service.getCharacteristic(COMMAND);
+  statusChar=await service.getCharacteristic(STATUS);
+  statusChar.addEventListener("characteristicvaluechanged",onStatus);
+  await statusChar.startNotifications();
+  setConnected(true);
+  log("Connected. Requesting device status...");
+  await send("G");
+  log("Connected to "+(device.name||"Pixel Keychain")+".");
+ }catch(error){
+  if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect();
+  resetConnection("Connection failed: "+(error&&error.message?error.message:String(error)));
+ }finally{
+  connecting=false;
+  $("connect").disabled=!!(device&&device.gatt&&device.gatt.connected);
+ }
+}
+$("connect").addEventListener("click",connect);
+$("disconnect").addEventListener("click",()=>{if(device&&device.gatt&&device.gatt.connected)device.gatt.disconnect();else resetConnection("Disconnected.")});
+$("refresh").addEventListener("click",async()=>{try{await send("G");log("Status requested.")}catch(e){log(e.message)}});
+$("syncClock").addEventListener("click",async()=>{try{const epoch=Math.floor(Date.now()/1000),offset=-new Date().getTimezoneOffset();await send("C:"+epoch+":"+offset);log("Phone time sent.")}catch(e){log(e.message)}});
+$("brightness").addEventListener("input",()=>{$("brightnessLabel").textContent=["100%","70%","40%","15%"][+$("brightness").value]});
+$("applyBrightness").addEventListener("click",async()=>{try{await send("B:"+$("brightness").value);log("Brightness command sent.")}catch(e){log(e.message)}});
+$("ledModes").addEventListener("click",async e=>{const b=e.target.closest("[data-mode]");if(!b||b.disabled)return;try{await send("L:"+b.dataset.mode);log("LED command sent.")}catch(err){log(err.message)}});
+$("savePetName").addEventListener("click",async()=>{
+ const name=$("petName").value.trim();
+ if(!name||name.length>12||/[:,\x00-\x1F]/.test(name)){log("Use 1–12 printable characters. Colon and comma are not allowed.");return}
+ try{await send("N:"+name);log("Pet name command sent.")}catch(e){log(e.message)}
+});
+$("idleOn").addEventListener("click",async()=>{try{await send("I:1");log("Idle mode enabled.")}catch(e){log(e.message)}});
+$("idleOff").addEventListener("click",async()=>{try{await send("I:0");log("Idle mode disabled.")}catch(e){log(e.message)}});
+$("saveIdleTimeout").addEventListener("click",async()=>{
+ const n=Number($("idleTimeout").value);
+ if(!Number.isInteger(n)||n<10||n>600){log("Timeout must be an integer from 10 to 600 seconds.");return}
+ try{await send("IT:"+n);log("Idle timeout command sent.")}catch(e){log(e.message)}
+});
+if(!window.isSecureContext)log("HTTPS is required for Web Bluetooth.");
+else if(!navigator.bluetooth)log("Web Bluetooth is not available in this browser. Try Chrome.");
+</script>
+</body></html>
