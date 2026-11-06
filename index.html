@@ -17,6 +17,10 @@ button,input{font:inherit}button{border:0;border-radius:9px;background:#111;colo
 button:disabled{opacity:.4;cursor:not-allowed}.full{width:100%}.secondary{background:#eee;color:#111;border:1px solid #ddd}
 .actions{display:flex;gap:8px;margin-top:9px}.actions button{flex:1}
 #log{margin:12px 0 0;padding:10px;background:#f3f3f3;border-radius:8px;font-size:12px;color:#444;overflow-wrap:anywhere}
+input[type=text],input[type=number]{width:100%;padding:12px;border:1px solid #ccc;border-radius:9px;background:#fff;color:#111}
+.stat{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;margin:10px 0;font-size:12px}
+.statbar{grid-column:1/-1;height:7px;border-radius:20px;background:#eee;overflow:hidden}
+.statbar i{display:block;height:100%;background:#111;width:0}
 .big{font-size:38px;font-weight:750;margin:5px 0}.line{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee;font-size:13px}.line:last-child{border:0}
 label{display:block;font-size:12px;color:#555;margin:12px 0 7px}input[type=range]{width:100%;accent-color:#111}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.mode{background:#fff;color:#111;border:1px solid #ccc}.mode.active{background:#111;color:#fff;border-color:#111}
@@ -57,7 +61,7 @@ footer{text-align:center;color:#888;font-size:11px;letter-spacing:1px;margin-top
 </section>
 
 <section class="card"><h2>ABOUT</h2>
- <div class="line"><span>Firmware</span><b>V3.0 BLE</b></div>
+ <div class="line"><span>Firmware</span><b>V4.3.1 Cyber Cat</b></div>
  <div class="line"><span>Transport</span><b>Bluetooth LE</b></div>
  <div class="line"><span>Dashboard</span><b>Web Bluetooth</b></div>
 </section>
@@ -76,7 +80,7 @@ const $=id=>document.getElementById(id);
 function log(s){$("log").textContent=s}
 function connected(on){
  $("dot").classList.toggle("on",on);$("state").textContent=on?"CONNECTED":"DISCONNECTED";
- ["disconnect","refresh","syncClock","brightness","applyBrightness"].forEach(id=>$(id).disabled=!on);
+ ["disconnect","refresh","syncClock","brightness","applyBrightness","petName","savePetName","idleOn","idleOff","idleTimeout","saveIdleTimeout"].forEach(id=>$(id).disabled=!on);
  document.querySelectorAll(".mode").forEach(b=>b.disabled=!on);
  $("connect").disabled=on;
 }
@@ -130,6 +134,18 @@ $("applyBrightness").onclick=async()=>{try{await send("B:"+$("brightness").value
 $("ledModes").onclick=async e=>{
  let b=e.target.closest("[data-mode]");if(!b||b.disabled)return;
  try{await send("L:"+b.dataset.mode);log("LED mode command sent")}catch(err){log(err.message)}
+};
+$("savePetName").onclick=async()=>{
+ const name=$("petName").value.trim();
+ if(!name||name.length>12||/[:,\\x00-\\x1F]/.test(name)){log("Use 1–12 printable characters. Colon and comma are not allowed.");return}
+ try{await send("N:"+name);log("Pet name command sent")}catch(e){log(e.message)}
+};
+$("idleOn").onclick=async()=>{try{await send("I:1");log("Idle mode enabled")}catch(e){log(e.message)}};
+$("idleOff").onclick=async()=>{try{await send("I:0");log("Idle mode disabled")}catch(e){log(e.message)}};
+$("saveIdleTimeout").onclick=async()=>{
+ const n=Number($("idleTimeout").value);
+ if(!Number.isInteger(n)||n<10||n>600){log("Timeout must be an integer from 10 to 600 seconds.");return}
+ try{await send("IT:"+n);log("Idle timeout command sent")}catch(e){log(e.message)}
 };
 if(!window.isSecureContext)log("HTTPS is required for Web Bluetooth. GitHub Pages provides HTTPS.");
 else if(!navigator.bluetooth)log("Web Bluetooth is not available in this browser. Try Chrome on Android.");
